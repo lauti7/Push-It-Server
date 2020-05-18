@@ -9,10 +9,12 @@ var STATUS_SCHEDULE = 'schedule'
 var STATUS_DRAFT = 'draft'
 
 exports.getMessages = async (showDraft, appId) => {
+  let messages = null
   if (showDraft) {
-    const messages = await Message.find({$and: [{appId}, {status: STATUS_DRAFT}]}).catch(e => console.log(e))
+    messages = await Message.find({$and: [{appId}, {status: STATUS_DRAFT}]}).catch(e => console.log(e))
+  } else {
+    messages = await Message.find({appId}).catch(e => console.log(e))
   }
-  const messages = await Message.find({appId}).catch(e => console.log(e))
 
 
   if (!messages) {
@@ -123,14 +125,15 @@ exports.checkScheduleMessages = async() => {
   const scheduleMessages = await Message.find({$and: [{status: STATUS_SCHEDULE},  {sendAt: {$lte: now}}]}).catch(e => console.log(e))
   if (scheduleMessages.length > 0) {
     console.log('Messages to send');
-    // const update = await Message.updateMany({$and: [{status: STATUS_SCHEDULE},  {sendAt: {$lte: now}}]}, {$set: {status: STATUS_SENT}}).catch(e => console.log(e));
+    const update = await Message.updateMany({$and: [{status: STATUS_SCHEDULE},  {sendAt: {$lte: now}}]}, {$set: {status: STATUS_SENT}}).catch(e => console.log(e));
     // console.log(update.nModified);
     //Queue and Jobs
     scheduleMessages.forEach(async (msg) => {
       const payload = JSON.stringify(msg.message)
       if (msg.segments.length > 0) {
-        const subscribers = await Segment.getSubscribers(msg.segments)
+        const subscribers = await Segment.getSegmentsSubscribers(msg.segments)
         console.log(subscribers);
+        //REDIS??????
         // subscribers.forEach(subscriber => {
         //   WebpushHelper.sendNotification(subscriber.subscription, payload).catch(e => console.error(e))
         // });
@@ -147,17 +150,17 @@ exports.run = async _id => {
   const message = await Message.updateOne({_id}, {$set:{status: STATUS_RUNING}}).catch(e => console.log(e))
 
   if (!message) {
-    throw Error('Error on updating')
+    return false
   }
 
   return true
 }
 
 exports.sent = async _id => {
-  const message = await Message.updateOne({_id}, {$set:{status: STATUS_RUNING}}).catch(e => console.log(e))
+  const message = await Message.updateOne({_id}, {$set:{status: STATUS_SENT}}).catch(e => console.log(e))
 
   if (!message) {
-    throw Error('Error on updating')
+    return false
   }
 
   return true
