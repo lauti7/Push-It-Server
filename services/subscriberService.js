@@ -107,3 +107,13 @@ exports.getSubscriberMessage = async condition => {
 
   return subscribers
 }
+
+exports.getSegmentSubscribers = async condition => {
+  const subscribers = await Subscriber.find(condition).catch(e => console.log(e))
+
+  if (!subscribers) {
+    return null
+  }
+
+  return subscribers
+}
