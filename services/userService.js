@@ -5,17 +5,21 @@ const bcrypt = require('bcryptjs')
 
 const checkIfExisted = async email => {
   const existedUser = await User.findOne({email}).catch(e => console.log(e))
+  console.log('Existed User', existedUser);
   if (existedUser) {
-    return true;
+    console.log('Existed');
+    return true
   }
-  return false;
+
+  return false
 }
 
 
 exports.register = async (data) => {
   const {email, firstName, lastName, password} = data
-  if (checkIfExisted(email)) {
-    return res.status(400).json({success: false, message: 'User already exists'})
+  const checkEmail = await checkIfExisted(email)
+  if (checkEmail) {
+    return false
   }
   const hashedPassword = bcrypt.hashSync(password)
   const user = await User.create({email, firstName, lastName, password: hashedPassword}).catch(e => console.log(e))
