@@ -7,7 +7,6 @@ const segmentConditionSchema = new Schema({
   operator: {type: String},
   value: {type: String},
   type: {type: String},
-  insideAnOr: {type: Boolean, default: false}
 }, {collection: 'SegmentConditions'})
 
 const SegmentCondition = mongoose.model('SegmentCondition', segmentConditionSchema)
