@@ -9,12 +9,20 @@ const messageSchema = new Schema({
   status: {type: String},
   message: {type: Object},
   platforms: {type: Object},
-  appId: {type: mongoose.Types.ObjectId, ref: 'Application'},
+  app: {type: mongoose.Types.ObjectId, ref: 'Application'},
   sendAt: {type: Date},
   upToYou: {type: Boolean, default: false},
   optimization: {type: String},
+  subscribersCount: {type: String, default: 0},
   createdAt: {type: Date, default: Date.now}
-}, {collection: 'Messages'})
+}, {collection: 'Messages', toObject: { virtuals: true } })
+
+messageSchema.virtual('clicks', {
+  ref: 'Click',
+  localField: '_id',
+  foreignField: 'messageId',
+  count: true
+})
 
 const Message = mongoose.model('Message', messageSchema)
 

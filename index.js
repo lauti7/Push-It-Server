@@ -6,11 +6,12 @@ const mongoose = require('mongoose');
 const app = express();
 const cors = require('cors')
 const path = require('path')
-const subscribersRoutes = require('./routes/subscribers')
-const applicationsRoutes = require('./routes/applications')
-const messagesRoutes = require('./routes/messages')
-const usersRoutes = require('./routes/users')
-const segmentsRoutes = require('./routes/segments')
+const subscriberRoutes = require('./routes/subscribers')
+const applicationRoutes = require('./routes/applications')
+const messageRoutes = require('./routes/messages')
+const userRoutes = require('./routes/users')
+const segmentRoutes = require('./routes/segments')
+const clickRoutes = require('./routes/clicks')
 const Message = require('./services/messageService')
 
 
@@ -35,11 +36,13 @@ const options = {
 app.use(cors(options))
 app.use(express.json())
 
-app.use('/api/subscribers', subscribersRoutes)
-app.use('/api/applications', applicationsRoutes)
-app.use('/api/messages', messagesRoutes)
-app.use('/api/users', usersRoutes)
-app.use('/api/segments', segmentsRoutes)
+app.use('/api/subscribers', subscriberRoutes)
+app.use('/api/applications', applicationRoutes)
+app.use('/api/messages', messageRoutes)
+app.use('/api/users', userRoutes)
+app.use('/api/segments', segmentRoutes)
+app.use('/api/clicks', clickRoutes)
+
 
 
 app.listen(8000, () => {

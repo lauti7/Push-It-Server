@@ -1,26 +1,13 @@
 const Application = require('../models/Application')
-const Subscriber = require('../services/subscriberService')
 const moment = require('moment')
 
 
-const getTotalSubscribers = async _id => {
-  const subs = await Subscriber.totalSubscribers(_id)
-
-  if (!subs) {
-    return null
-  }
-
-  return subs
-}
-
-
-
-exports.create = async (data, user) => {
+exports.create = async (data, userId) => {
   const application = await Application.create({
     name: data.name,
     siteName: data.siteName,
     siteUrl: data.siteUrl,
-    userId,
+    user: userId,
     welcomeNotification: data.welcomeNotification,
   })
   .catch(e => {
@@ -35,13 +22,16 @@ exports.create = async (data, user) => {
 
 exports.getApp = async (_id) => {
 
-  const application = await Application.findById({_id}).catch(e => console.log(e))
+  const application = await Application.findById({_id}).populate('subscribers').catch(e => console.error('ERROR: ', e.message))
+
+  console.log('APPLICATION SERVICE:', application);
+
 
   if (!application) {
     return null;
   }
 
-  const totalSubscribers = await getTotalSubscribers(_id)
+  const totalSubscribers = application.subscribers
   console.log(totalSubscribers.length);
 
   const subscribedSub = [...totalSubscribers].filter(sub => sub.status === 'subscribed').length
@@ -61,8 +51,8 @@ exports.getApp = async (_id) => {
   })
 }
 
-exports.getAuthApps = async userId => {
-  const userApplications = await Application.find({userId: userId}).catch(e => console.log(e))
+exports.getAuthApps = async user => {
+  const userApplications = await Application.find({user}).catch(e => console.log(e))
 
   if (!userApplications) {
     return null;
@@ -70,4 +60,14 @@ exports.getAuthApps = async userId => {
 
 
   return userApplications
+}
+
+exports.getAppSubscribers = async (_id) => {
+  const app = Application.findById({_id}).populate('subscribers').exec().catch(e => console.log(e))
+
+  if (!app) {
+    return null
+  }
+
+  return app.subscribers
 }

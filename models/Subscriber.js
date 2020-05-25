@@ -14,7 +14,7 @@ const subscriberSchema = new Schema({
   sessions: {type: Array},
   sessionsCount: {type: Number, default: 0},
   lastSession: {type: Date},
-  appId: {type: mongoose.Types.ObjectId, ref: 'Application'},
+  app: {type: mongoose.Types.ObjectId, ref: 'Application'},
 }, {collection: 'Subscribers'})
 
 const Subscriber = mongoose.model('Subscriber', subscriberSchema)

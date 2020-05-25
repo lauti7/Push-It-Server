@@ -1,10 +1,9 @@
 const Segment = require('../models/Segment')
-const SegmentCondition = require('./segmentConditionService')
 const Subscriber = require('./subscriberService')
 const moment = require('moment')
 const Promise = require('bluebird')
 
-exports.create = async ({name, conditions}, appId) => {
+const create = async ({name, conditions}, appId) => {
   const segment =  await Segment.create({name, condition: [...conditions] , appId}).catch(e => console.log(e))
   if (!segment) {
     return null
@@ -16,15 +15,15 @@ exports.create = async ({name, conditions}, appId) => {
   return segment
 }
 
-exports.getAppSegments = async appId => {
-  const segments = await Segment.find({appId}).catch(e => console.log(e))
+const getAppSegments = async app => {
+  const segments = await Segment.find({app}).catch(e => console.log(e))
   if (!segments) {
     return null;
   }
   return segments
 }
 
-exports.getSegemt = async _id => {
+const getSegemt = async _id => {
   const segment = await Segment.findById({_id}).catch(e => console.log(e))
 
   if (!segment) {
@@ -34,7 +33,7 @@ exports.getSegemt = async _id => {
   return segment
 }
 
-exports.getSubscribers = async _id => {
+const getSubscribers = async _id => {
   const subs = await getSegmentSubscribers(_id)
   if (subs === null) {
     return null
@@ -74,7 +73,7 @@ const getConditions = async segments => {
   return segmentsConditions
 }
 
-exports.getSegmentsSubscribers = async segments => {
+const getSegmentsSubscribers = async (segments, appId) => {
   console.log('segments: ', segments);
   const segmentsConditions = await findConditions(segments)
   console.log('Segments Conditions: ', segmentsConditions);
@@ -158,9 +157,9 @@ exports.getSegmentsSubscribers = async segments => {
     })
   })
 
-  console.log(query);
+  console.log(JSON.stringify(query));
 
-  const subscribers = await Subscriber.getSubscriberMessage({$and: [query]})
+  const subscribers = await Subscriber.getSubscriberMessage({$and: [query, {app: appId}]})
   if (!subscribers) {
     return null
   }
@@ -169,15 +168,6 @@ exports.getSegmentsSubscribers = async segments => {
 
 }
 
-// exports.updateCount = async (_id, subscribers) => {
-//   const segmentUpdate = await Segment.findByIdAndUpdate({_id}, {$set: {count: subscribers.length}}).catch(e => console.log(e))
-//
-//   if (!segmentUpdate) {
-//     return null
-//   }
-//
-//   return true
-// }
 
 const getSegmentSubscribers = async id => {
   const segment = await Segment.findById({_id: id}).catch(e => console.log(e))
@@ -264,7 +254,7 @@ const getSegmentSubscribers = async id => {
 
 }
 
-exports.changeStatus = async (_id, status) => {
+const changeStatus = async (_id, status) => {
 
   let newStatus = ''
 
@@ -282,4 +272,15 @@ exports.changeStatus = async (_id, status) => {
 
   return segment
 
+}
+
+module.exports = {
+  create,
+  getAppSegments,
+  getSegemt,
+  getSubscribers,
+  findConditions,
+  getConditions,
+  getSegmentsSubscribers,
+  changeStatus
 }

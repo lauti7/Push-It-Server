@@ -16,6 +16,8 @@ const show = async (req, res) => {
 
   const application = await Application.getApp(_id)
 
+  console.log('APPLICATION: ', application);
+
   if (!application) {
     return res.status(500).json({success: false})
   }

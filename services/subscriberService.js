@@ -1,6 +1,4 @@
 const Subscriber = require('../models/Subscriber')
-var LookIP = require('lookip')
-const lookip = new LookIP()
 
 exports.create = async ({subscription, os, device, appId, country, browser, lang, lastSession, subscriberId}) => {
   const subscriber = await Subscriber.create({
@@ -13,7 +11,7 @@ exports.create = async ({subscription, os, device, appId, country, browser, lang
     lang,
     lastSession,
     sessions: [lastSession],
-    appId,
+    app:appId,
     sessionsCount: 1
   })
   .catch(e => {
@@ -27,8 +25,8 @@ exports.create = async ({subscription, os, device, appId, country, browser, lang
   return true
 }
 
-exports.getSubscribers = async appId => {
-  const subscribers = await Subscriber.find({appId}).catch((err) => console.log(err))
+exports.getSubscribers = async app => {
+  const subscribers = await Subscriber.find({app}).catch((err) => console.log(err))
 
 
   if (!subscribers) {
@@ -58,9 +56,9 @@ exports.unsubscribe = async subscriberId => {
   return updateSub
 }
 
-exports.getSubOSs = async appId => {
+exports.getSubOSs = async app => {
 
-  const os = await Subscriber.find({appId}).distinct('os').catch(e => console.log(e))
+  const os = await Subscriber.find({app}).distinct('os').catch(e => console.log(e))
 
   if (!os) {
     return null;
@@ -68,33 +66,6 @@ exports.getSubOSs = async appId => {
 
   return os
 
-}
-
-
-exports.subscribedUsersCount = async appId => {
-  const subscribedUsers = await Subscriber.find({$and: [{status: 'subscribed'}, {appId: _id}]}).count().catch(e => console.log(e))
-
-  if (!subscribedUsers) {
-    return null;
-  }
-
-  return subscribedUsers
-
-}
-
-exports.totalSubscribers = async appId => {
-  const totalSubscribers = await Subscriber.find({appId}).catch(e => console.log(e))
-
-  if (!totalSubscribers) {
-    return null
-  }
-
-  return totalSubscribers
-
-}
-
-exports.monthlyUsers = async appId => {
-  return true
 }
 
 

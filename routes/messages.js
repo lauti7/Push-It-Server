@@ -1,12 +1,14 @@
 const router = require('express').Router()
 const isAuthenticated = require('../middlewares/isAuthenticated')
-const {create, messages, manuallySend, sentMessages, scheduleMessages} = require('../controllers/messagesController')
+const {create, messages, manuallySend, sentMessages, scheduleMessages, getMessage} = require('../controllers/messagesController')
 
-router.get('/appmessages/:_id', messages)
-router.get('/appmessages/:_id/sent' ,sentMessages)
-router.get('/appmessages/:_id/schedule' ,scheduleMessages)
-router.post('/appmessages/:_id/newmessage', create)
-router.post('/manuallysend' ,manuallySend)
+router.get('/:messageId',isAuthenticated, getMessage)
+router.get('/appmessages/:appId',isAuthenticated,  messages)
+router.get('/appmessages/:appId/sent' ,isAuthenticated, sentMessages)
+router.get('/appmessages/:appId/schedule' , isAuthenticated, scheduleMessages)
+router.post('/appmessages/:appId/newmessage',isAuthenticated, create)
+router.post('/manuallysend' , isAuthenticated, manuallySend)
+
 
 
 module.exports = router

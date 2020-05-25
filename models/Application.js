@@ -6,8 +6,22 @@ const applicationSchema = new Schema({
   siteName: {type: String},
   siteUrl: {type: String},
   welcomeNotification: {type: Object},
-  userId: {type: mongoose.Types.ObjectId, ref: 'User'}
+  user: {type: mongoose.Types.ObjectId, ref: 'User'}
 }, {collection: 'Applications'})
+
+applicationSchema.virtual('subscribers', {
+  ref: 'Subscriber',
+  localField: '_id',
+  foreignField: 'appId',
+})
+
+applicationSchema.virtual('subscount', {
+  ref: 'Subscriber',
+  localField: '_id',
+  foreignField: 'appId',
+  count: true
+})
+
 
 const Application = mongoose.model('Application', applicationSchema)
 

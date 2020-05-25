@@ -1,19 +1,21 @@
 const Message = require('../models/Message')
 const Segment = require('./segmentService')
+const Application = require('./applicationService')
 const WebpushHelper = require('../utils/webpush')
 
 
 var STATUS_SENT = 'sent'
 var STATUS_RUNING = 'running'
 var STATUS_SCHEDULE = 'schedule'
+var STATUS_UPTOYOU = 'waiting'
 var STATUS_DRAFT = 'draft'
 
 exports.getMessages = async (showDraft, appId) => {
   let messages = null
   if (showDraft) {
-    messages = await Message.find({$and: [{appId}, {status: STATUS_DRAFT}]}).catch(e => console.log(e))
+    messages = await Message.find({$and: [{app: appId}, {status: STATUS_DRAFT}]}).catch(e => console.log(e))
   } else {
-    messages = await Message.find({appId}).catch(e => console.log(e))
+    messages = await Message.find({app: appId}).catch(e => console.log(e))
   }
 
 
@@ -29,11 +31,13 @@ exports.create = message => {
   newMessage.name = message.name
   if (message.afterCreation) {
     newMessage.sendAt = Date.now()
+    newMessage.status = STATUS_SCHEDULE
   } else if (message.atParticularTime){
     newMessage.status = STATUS_SCHEDULE
     newMessage.sendAt = message.scheduleDate
   } else if (message.upToYou) {
     newMessage.upToYou = true;
+    newMessage.status = STATUS_UPTOYOU
   }
 
   if (message.defaultWay) {
@@ -43,7 +47,7 @@ exports.create = message => {
   }
 
   newMessage.message = message.message
-  newMessage.appId = message.appId
+  newMessage.app = message.appId
   if (message.draft) {
     newMessage.draft = STATUS_DRAFT
   }
@@ -76,7 +80,9 @@ exports.create = message => {
 
 
 exports.getSentMessages = async appId => {
-  const sentMessages = await Message.find({$and:[{status: STATUS_SENT}, {appId}]}).catch(e => console.log(e))
+  const sentMessages = await Message.find({$and:[{status: STATUS_SENT}, {app: appId}]}).populate('clicks').exec().catch(e => console.log(e))
+  console.log(sentMessages);
+
 
   if (!sentMessages) {
     return null;
@@ -87,7 +93,7 @@ exports.getSentMessages = async appId => {
 
 
 exports.getScheduleMessages = async appId => {
-  const scheduleMsgs = await Message.find({$and:[{status: STATUS_SCHEDULE}, {appId}]}).catch(e => console.log(e))
+  const scheduleMsgs = await Message.find({$and:[{status: STATUS_SCHEDULE}, {app: appId}]}).populate('clicks').exec().catch(e => console.log(e))
 
   if (!scheduleMsgs) {
     return null;
@@ -104,7 +110,7 @@ exports.manuallySend = async _id => {
   const message = await Message.findById(_id).catch(e => console.log(e))
   if (message) {
     const payload = JSON.stringify(message.message)
-    const subscribers = await Subscriber.getSubscribers(message.appId)
+    const subscribers = await Application.getAppSubscribers(message.app)
     if (!subscribers) {
       return false;
     }
@@ -125,24 +131,46 @@ exports.checkScheduleMessages = async() => {
   const scheduleMessages = await Message.find({$and: [{status: STATUS_SCHEDULE},  {sendAt: {$lte: now}}]}).catch(e => console.log(e))
   if (scheduleMessages.length > 0) {
     console.log('Messages to send');
-    const update = await Message.updateMany({$and: [{status: STATUS_SCHEDULE},  {sendAt: {$lte: now}}]}, {$set: {status: STATUS_SENT}}).catch(e => console.log(e));
+    // const update = await Message.updateMany({$and: [{status: STATUS_SCHEDULE},  {sendAt: {$lte: now}}]}, {$set: {status: STATUS_SENT}}).catch(e => console.log(e));
     // console.log(update.nModified);
     //Queue and Jobs
     scheduleMessages.forEach(async (msg) => {
-      const payload = JSON.stringify(msg.message)
       if (msg.segments.length > 0) {
-        const subscribers = await Segment.getSegmentsSubscribers(msg.segments)
+        console.log('segment');
+        const subscribers = await Segment.getSegmentsSubscribers(msg.segments, msg.app)
         console.log(subscribers);
         //REDIS??????
         // subscribers.forEach(subscriber => {
         //   WebpushHelper.sendNotification(subscriber.subscription, payload).catch(e => console.error(e))
         // });
+      } else {
+        console.log('not segment');
+        const subscribers = await Application.getAppSubscribers(message.app);
+        await Message.updateOne({_id: msg._id}, {$set: {subscribersCount: subscribers.length}}).catch(e => console.log(e))
+        console.log(subscribers);
+        subscribers.forEach(subscriber => {
+          const payload = JSON.stringify({...msg.message, data: {messageId: msg._id, subscriberId: subscriber._id}})
+          console.log("PAYLOAD", payload);
+          WebpushHelper.sendNotification(subscriber.subscription, payload).catch(e => console.error(e))
+        });
       }
 
     })
   } else {
     console.log('Doesnt find');
   }
+
+}
+
+exports.getMessage = async _id => {
+  const message = await Message.findById({_id}).catch(e => console.log(e))
+
+  if (!message) {
+    return null;
+  }
+
+  return message
+
 
 }
 

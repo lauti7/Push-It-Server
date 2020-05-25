@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs')
 
 
 const checkIfExisted = async email => {
-  const existedUser = await User.findOne({email}).catch(e => console.log(e))
+  const existedUser = await getUser(email)
   console.log('Existed User', existedUser);
   if (existedUser) {
     console.log('Existed');
@@ -15,7 +15,7 @@ const checkIfExisted = async email => {
 }
 
 
-exports.register = async (data) => {
+const register = async (data) => {
   const {email, firstName, lastName, password} = data
   const checkEmail = await checkIfExisted(email)
   if (checkEmail) {
@@ -30,7 +30,8 @@ exports.register = async (data) => {
   return user
 }
 
-exports.getUser = async email => {
+
+const getUser = async email => {
   const user = await User.findOne({email}).catch(e => console.log(e))
 
   if (!user) {
@@ -38,5 +39,12 @@ exports.getUser = async email => {
   }
 
   return user
+}
 
+
+
+module.exports = {
+  checkIfExisted,
+  register,
+  getUser
 }
